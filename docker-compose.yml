@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  web_target:
+    image: nginx:alpine
+    container_name: victima_lab
+    ports:
+      - "8080:80"

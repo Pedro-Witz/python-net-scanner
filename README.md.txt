@@ -1,0 +1,1 @@
+Análisis de huella digital (Fingerprinting): Se identificó la exposición de la versión del software mediante la cabecera Server en un entorno aislado de pruebas locales

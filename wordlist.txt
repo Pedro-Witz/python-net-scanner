@@ -1,0 +1,10 @@
+/
+/admin
+/login
+/dashboard
+/config.json
+/secret
+/robots.txt
+/api/v1/users
+/backup.zip
+/uploads
