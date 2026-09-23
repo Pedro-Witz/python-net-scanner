@@ -1,18 +1,20 @@
 import urllib.request
 import urllib.error
+import urllib.parse
 import os
 import time
 import random
 import argparse
+import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def banner():
     print(r"""
-   ___                  _              _                               
-  / __| ___  ___ _   _ _| |___ __ _  __| |  ___ __ __ _ _ _  _ _ ___ _ _ 
- | (_ |/ -_)/ _ \ || | ' \/ -_) _` |/ _` | (_-<\ V  V | ' \| '_/ -_) '_|
-  \___|\___|\___/\_,_|_||_\___\__,_|\__,_| /__/ \_/\_/|_||_|_| \___|_|  
-    [ Herramienta Modular de Auditoría HTTP & Fuzzing - Laboratorio Local ]
+    ___                       _                  _                             
+   / __| ___  ___ _   _  _| |___ __ _  __| |  ___ __ __ _ _ _  _ _ ___ _ _ 
+  | (_ |/ -_)/ _ \ || | ' \/ -_) _` |/ _` | (_-<\ V  V | ' \| '_/ -_) '_|
+   \___|\___|\___/\_,_|_||_\___\__,_|\__,_| /__/ \_/\_/|_||_|_| \___|_| 
+     [ Herramienta Modular de Auditoría HTTP, Fuzzing & Escáner de Puertos ]
     """)
 
 def realizar_peticion(url, headers, stealth, delay_min, delay_max):
@@ -20,7 +22,6 @@ def realizar_peticion(url, headers, stealth, delay_min, delay_max):
         req = urllib.request.Request(url, headers=headers)
         response = urllib.request.urlopen(req)
         
-        # Si aplica modo sigiloso, aplicamos la pausa en el hilo
         if stealth:
             pausa = random.uniform(delay_min, delay_max)
             time.sleep(pausa)
@@ -33,13 +34,26 @@ def realizar_peticion(url, headers, stealth, delay_min, delay_max):
     except urllib.error.URLError as e:
         return False, "Error de red", url, str(e.reason)
 
+def escanear_puerto(target_host, port):
+    try:
+        ip_objetivo = socket.gethostbyname(target_host)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        result = s.connect_ex((ip_objetivo, port))
+        if result == 0:
+            print(f"[+] [PUERTO ABIERTO] {target_host}:{port}")
+        s.close()
+    except Exception:
+        pass
+
 def main():
-    parser = argparse.ArgumentParser(description="Escáner HTTP modular y herramienta de pruebas de carga en Python.")
-    parser.add_argument("-u", "--url", required=True, help="URL objetivo (ej. http://localhost:8080)")
+    parser = argparse.ArgumentParser(description="Escáner HTTP modular, fuzzing y escaneo de puertos en Python.")
+    parser.add_argument("-u", "--url", help="URL u host objetivo (ej. http://localhost:8080 o 127.0.0.1)")
     parser.add_argument("-w", "--wordlist", help="Ruta al archivo de diccionario para fuzzing de rutas")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Número de hilos concurrentes (por defecto: 10)")
     parser.add_argument("-s", "--stealth", action="store_true", help="Activar modo sigiloso con retardos aleatorios")
     parser.add_argument("--load-test", type=int, help="Realizar una prueba de carga lanzando N peticiones a la URL base")
+    parser.add_argument("--port-scan", action="store_true", help="Ejecutar escaneo de puertos TCP comunes en el objetivo")
 
     args = parser.parse_args()
     banner()
@@ -48,6 +62,27 @@ def main():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'X-Security-Token': 'TokenSecretoDePrueba123'
     }
+
+    if not args.url:
+        print("[!] Error: Debes especificar un objetivo usando -u o --url. Usa -h para ayuda.")
+        return
+
+    # === MODO ESCANEO DE PUERTOS ===
+    if args.port_scan:
+        parsed_url = urllib.parse.urlparse(args.url)
+        target_host = parsed_url.hostname if parsed_url.hostname else args.url.replace("http://", "").replace("https://", "").split("/")[0]
+        
+        ports = [21, 22, 23, 25, 53, 80, 110, 443, 445, 3306, 3389, 8080]
+        print(f"[*] Iniciando escaneo de puertos TCP en: {target_host}")
+        print(f"[*] Verificando {len(ports)} puertos comunes con {args.threads} hilos...\n")
+        
+        inicio = time.time()
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
+            for port in ports:
+                executor.submit(escanear_puerto, target_host, port)
+                
+        print(f"\n[*] Escaneo de puertos completado en {time.time() - inicio:.4f} segundos.")
+        return
 
     # === MODO PRUEBA DE CARGA ===
     if args.load_test:
@@ -97,7 +132,7 @@ def main():
                     
         print(f"\n[*] Fuzzing completado en {time.time() - inicio:.4f} segundos.")
     else:
-        print("[!] Especifica un diccionario con -w o una prueba de carga con --load-test. Usa -h para ayuda.")
+        print("[!] Especifica una acción válida (-w para fuzzing, --load-test para carga, o --port-scan para puertos). Usa -h para ayuda.")
 
 if __name__ == "__main__":
     main()
