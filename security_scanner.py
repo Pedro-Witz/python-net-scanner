@@ -9,12 +9,10 @@ import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def banner():
-    print(r"""
-    ___                       _                  _                             
-   / __| ___  ___ _   _  _| |___ __ _  __| |  ___ __ __ _ _ _  _ _ ___ _ _ 
-  | (_ |/ -_)/ _ \ || | ' \/ -_) _` |/ _` | (_-<\ V  V | ' \| '_/ -_) '_|
-   \___|\___|\___/\_,_|_||_\___\__,_|\__,_| /__/ \_/\_/|_||_|_| \___|_| 
-     [ Herramienta Modular de Auditoría HTTP, Fuzzing & Escáner de Puertos ]
+    print("""
+    ==================================================
+        [+] NEXUSPROBE - Auditoría HTTP, Fuzzing & Red
+    ==================================================
     """)
 
 def realizar_peticion(url, headers, stealth, delay_min, delay_max):
@@ -47,7 +45,7 @@ def escanear_puerto(target_host, port):
         pass
 
 def main():
-    parser = argparse.ArgumentParser(description="Escáner HTTP modular, fuzzing y escaneo de puertos en Python.")
+    parser = argparse.ArgumentParser(description="NexusProbe: Escáner HTTP modular, fuzzing y escaneo de puertos en Python.")
     parser.add_argument("-u", "--url", help="URL u host objetivo (ej. http://localhost:8080 o 127.0.0.1)")
     parser.add_argument("-w", "--wordlist", help="Ruta al archivo de diccionario para fuzzing de rutas")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Número de hilos concurrentes (por defecto: 10)")
